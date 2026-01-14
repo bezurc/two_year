@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Flipbook</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; gap: 10px; align-items: center;
+      padding: 10px 12px; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+    }
+    button, input {
+      padding: 8px 10px; border-radius: 10px; border: 1px solid #444;
+      background: #1c1c1c; color: #eee;
+    }
+    input { width: 76px; }
+    #wrap { display: grid; place-items: center; padding: 16px; }
+    /* The flip container */
+    #book {
+      width: min(92vw, 920px);
+      height: min(72vh, 640px);
+      background: transparent;
+    }
+    .hint { opacity: 0.8; font-size: 14px; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <button id="prev">⟵ Prev</button>
+    <button id="next">Next ⟶</button>
+    <span>Page</span>
+    <input id="pageInput" type="number" min="1" />
+    <span id="pageTotal"></span>
+    <span class="hint">Drag corners / swipe</span>
+  </header>
+
+  <div id="wrap">
+    <div id="book"></div>
+  </div>
+
+  <script type="module">
+    import { PageFlip } from "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/page-flip.module.js";
+
+    // ---- Configure these two lines ----
+    const PAGE_COUNT = 30;
+    const IMAGE_PREFIX = "images/page-"; // expects page-1.jpg, page-2.jpg, ...
+    // -----------------------------------
+
+    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => `${IMAGE_PREFIX}${i + 1}.jpg`);
+
+    const bookEl = document.getElementById("book");
+    const pageInput = document.getElementById("pageInput");
+    const pageTotal = document.getElementById("pageTotal");
+    pageTotal.textContent = `of ${PAGE_COUNT}`;
+    pageInput.max = String(PAGE_COUNT);
+    pageInput.value = "1";
+
+    const pageFlip = new PageFlip(bookEl, {
+      width: 460,
+      height: 640,
+      size: "stretch",
+      minWidth: 315,
+      maxWidth: 1000,
+      minHeight: 420,
+      maxHeight: 1400,
+      maxShadowOpacity: 0.35,
+      showCover: true,       // first page behaves like a cover
+      mobileScrollSupport: false,
+      useMouseEvents: true
+    });
+
+    pageFlip.loadFromImages(pages);
+
+    function updateUI() {
+      // StPageFlip uses zero-based index internally
+      const n = pageFlip.getCurrentPageIndex() + 1;
+      pageInput.value = String(n);
+    }
+
+    document.getElementById("prev").onclick = () => pageFlip.flipPrev();
+    document.getElementById("next").onclick = () => pageFlip.flipNext();
+
+    pageInput.addEventListener("change", () => {
+      const n = parseInt(pageInput.value, 10);
+      if (!Number.isFinite(n) || n < 1 || n > PAGE_COUNT) return;
+      pageFlip.flip(n - 1);
+    });
+
+    pageFlip.on("flip", updateUI);
+    pageFlip.on("changeOrientation", () => pageFlip.update());
+    window.addEventListener("resize", () => pageFlip.update());
+  </script>
+</body>
+</html>
