@@ -45,10 +45,13 @@
 
     // ---- Configure these two lines ----
     const PAGE_COUNT = 30;
-    const IMAGE_PREFIX = "images/page-"; // expects page-1.jpg, page-2.jpg, ...
+    const IMAGE_PREFIX = "images/"; // expects page-1.jpg, page-2.jpg, ...
     // -----------------------------------
 
-    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => `${IMAGE_PREFIX}${i + 1}.jpg`);
+    const pages = Array.from(
+      { length: PAGE_COUNT },
+      (_, i) => `${IMAGE_PREFIX}${i + 1}.png`
+    );
 
     const bookEl = document.getElementById("book");
     const pageInput = document.getElementById("pageInput");
