@@ -46,56 +46,115 @@
     <div id="book"></div>
   </div>
 
-  <script type="module">
-    // ✅ Correct module path:
-    import { PageFlip } from "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.module.js";
+<script type="module">
+  import { PageFlip } from "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.module.js";
 
-    // Your images are in the repo ROOT, named: 1.png, 2.png, ... 30.png
-    const PAGE_COUNT = 30;
+  const PAGE_COUNT = 30;
+  const pages = Array.from({ length: PAGE_COUNT }, (_, i) => `${i + 1}.png`);
 
-    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => `${i + 1}.png`);
+  const bookEl = document.getElementById("book");
+  const pageInput = document.getElementById("pageInput");
+  const pageTotal = document.getElementById("pageTotal");
+  pageTotal.textContent = `of ${PAGE_COUNT}`;
+  pageInput.max = String(PAGE_COUNT);
+  pageInput.value = "1";
 
-    const bookEl = document.getElementById("book");
-    const pageInput = document.getElementById("pageInput");
-    const pageTotal = document.getElementById("pageTotal");
+  let pageFlip = null;
+  let currentIndex = 0;
 
-    pageTotal.textContent = `of ${PAGE_COUNT}`;
-    pageInput.max = String(PAGE_COUNT);
-    pageInput.value = "1";
+  function isMobile() {
+    return window.matchMedia("(max-width: 640px)").matches;
+  }
 
-    const pageFlip = new PageFlip(bookEl, {
+  function buildSettings() {
+    // Tune these. The idea:
+    // - mobile: smaller base size, portrait mode feel, allow stretching to fit screen
+    // - desktop: bigger base size but cap max so it doesn't blow up and blur
+    if (isMobile()) {
+      return {
+        width: 320,
+        height: 480,
+        size: "stretch",
+        minWidth: 240,
+        maxWidth: 520,
+        minHeight: 360,
+        maxHeight: 800,
+        showCover: true,
+        useMouseEvents: true,
+        mobileScrollSupport: true,
+        maxShadowOpacity: 0.35,
+      };
+    }
+
+    // Desktop / larger screens
+    return {
       width: 460,
       height: 640,
       size: "stretch",
       minWidth: 315,
-      maxWidth: 1000,
+      maxWidth: 920,     // cap growth to reduce blur
       minHeight: 420,
-      maxHeight: 1400,
-      maxShadowOpacity: 0.35,
+      maxHeight: 1280,   // cap growth to reduce blur
       showCover: true,
+      useMouseEvents: true,
       mobileScrollSupport: false,
-      useMouseEvents: true
-    });
+      maxShadowOpacity: 0.35,
+    };
+  }
 
-    // Load pages
-    pageFlip.loadFromImages(pages);
+  async function initFlipbook(keepPage = true) {
+    const keepIndex = keepPage ? currentIndex : 0;
 
-    function updateUI() {
-      const n = pageFlip.getCurrentPageIndex() + 1; // zero-based -> 1-based
-      pageInput.value = String(n);
+    // If a previous instance exists, destroy it cleanly
+    if (pageFlip) {
+      try { pageFlip.destroy(); } catch (e) {}
+      pageFlip = null;
+      bookEl.innerHTML = ""; // clear DOM remnants
     }
 
-    document.getElementById("prev").onclick = () => pageFlip.flipPrev();
-    document.getElementById("next").onclick = () => pageFlip.flipNext();
+    pageFlip = new PageFlip(bookEl, buildSettings());
 
-    pageInput.addEventListener("change", () => {
-      const n = parseInt(pageInput.value, 10);
-      if (!Number.isFinite(n) || n < 1 || n > PAGE_COUNT) return;
-      pageFlip.flip(n - 1);
+    // Load images
+    pageFlip.loadFromImages(pages);
+
+    // Jump back to previous page after rebuild
+    if (keepIndex > 0) {
+      // PageFlip sometimes needs a tick after load
+      setTimeout(() => pageFlip.flip(keepIndex), 0);
+    }
+
+    // Events
+    pageFlip.on("flip", () => {
+      currentIndex = pageFlip.getCurrentPageIndex();
+      pageInput.value = String(currentIndex + 1);
     });
 
-    pageFlip.on("flip", updateUI);
-    window.addEventListener("resize", () => pageFlip.update());
-  </script>
+    // Initialize UI
+    currentIndex = keepIndex;
+    pageInput.value = String(currentIndex + 1);
+  }
+
+  // Buttons / input
+  document.getElementById("prev").onclick = () => pageFlip?.flipPrev();
+  document.getElementById("next").onclick = () => pageFlip?.flipNext();
+
+  pageInput.addEventListener("change", () => {
+    const n = parseInt(pageInput.value, 10);
+    if (!Number.isFinite(n) || n < 1 || n > PAGE_COUNT) return;
+    currentIndex = n - 1;
+    pageFlip?.flip(currentIndex);
+  });
+
+  // Rebuild on resize/orientation change (keeps current page)
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => initFlipbook(true), 200);
+  });
+
+  // Start
+  initFlipbook(false);
+</script>
+
 </body>
 </html>
