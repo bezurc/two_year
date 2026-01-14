@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>My Flipbook</title>
+
+  <!-- PageFlip library CSS (recommended) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/src/Style/stPageFlip.css">
+
   <style>
     body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
     header {
@@ -17,6 +21,7 @@
     }
     input { width: 76px; }
     #wrap { display: grid; place-items: center; padding: 16px; }
+
     /* The flip container */
     #book {
       width: min(92vw, 920px);
@@ -26,6 +31,7 @@
     .hint { opacity: 0.8; font-size: 14px; margin-left: auto; }
   </style>
 </head>
+
 <body>
   <header>
     <button id="prev">⟵ Prev</button>
@@ -41,21 +47,18 @@
   </div>
 
   <script type="module">
-    import { PageFlip } from "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/page-flip.module.js";
+    // ✅ Correct module path:
+    import { PageFlip } from "https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.module.js";
 
-    // ---- Configure these two lines ----
+    // Your images are in the repo ROOT, named: 1.png, 2.png, ... 30.png
     const PAGE_COUNT = 30;
-    const IMAGE_PREFIX = ""; // expects page-1.jpg, page-2.jpg, ...
-    // -----------------------------------
 
-    const pages = Array.from(
-      { length: PAGE_COUNT },
-      (_, i) => `${IMAGE_PREFIX}${i + 1}.png`
-    );
+    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => `${i + 1}.png`);
 
     const bookEl = document.getElementById("book");
     const pageInput = document.getElementById("pageInput");
     const pageTotal = document.getElementById("pageTotal");
+
     pageTotal.textContent = `of ${PAGE_COUNT}`;
     pageInput.max = String(PAGE_COUNT);
     pageInput.value = "1";
@@ -69,16 +72,16 @@
       minHeight: 420,
       maxHeight: 1400,
       maxShadowOpacity: 0.35,
-      showCover: true,       // first page behaves like a cover
+      showCover: true,
       mobileScrollSupport: false,
       useMouseEvents: true
     });
 
+    // Load pages
     pageFlip.loadFromImages(pages);
 
     function updateUI() {
-      // StPageFlip uses zero-based index internally
-      const n = pageFlip.getCurrentPageIndex() + 1;
+      const n = pageFlip.getCurrentPageIndex() + 1; // zero-based -> 1-based
       pageInput.value = String(n);
     }
 
@@ -92,7 +95,6 @@
     });
 
     pageFlip.on("flip", updateUI);
-    pageFlip.on("changeOrientation", () => pageFlip.update());
     window.addEventListener("resize", () => pageFlip.update());
   </script>
 </body>
